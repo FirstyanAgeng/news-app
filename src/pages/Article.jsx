@@ -20,11 +20,11 @@ const Articles = ({ category, searchTerm }) => {
         let url;
 
         if (category === "programming") {
-          url = `/api/svc/search/v2/articlesearch.json?q=programming&api-key=${apiKey}`;
+          url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=programming&api-key=${apiKey}`;
         } else if (category === "indonesia") {
-          url = `/api/svc/search/v2/articlesearch.json?q=Indonesia&&api-key=${apiKey}`;
+          url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=Indonesia&&api-key=${apiKey}`;
         } else if (category === "mostPopular") {
-          url = `/api/svc/mostpopular/v2/viewed/1.json?api-key=${apiKey}`;
+          url = `https://api.nytimes.com/svc/mostpopular/v2/viewed/1.json?api-key=${apiKey}`;
         }
 
         const response = await axios.get(url);
