@@ -1,36 +1,63 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, Skeleton, Alert, Typography, Row, Col, Button } from "antd";
-import { useDispatch } from "react-redux";
-import { saveArticle } from "../redux/articlesSlice"; // Update import
+import { useDispatch, useSelector } from "react-redux";
+import { saveArticle, unsaveArticle } from "../redux/articlesSlice";
 
 const { Title, Paragraph, Link } = Typography;
 
 const Articles = ({ category, searchTerm }) => {
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false); // Local loading state
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const dispatch = useDispatch();
+  const savedArticles = useSelector((state) => state.articles.savedArticles);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); // Set loading to true when fetching data
+      setLoading(true);
       try {
-        const apiKey = "pXoeHirdswj7Y4STH4IEBrrnzjJJgfqr"; // Replace with your actual API key
+        const apiKey = "pXoeHirdswj7Y4STH4IEBrrnzjJJgfqr";
         let url;
 
-        if (category === "programming") {
-          url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=programming&api-key=${apiKey}`;
-        } else if (category === "indonesia") {
-          url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=Indonesia&&api-key=${apiKey}`;
-        } else if (category === "mostPopular") {
-          url = `https://api.nytimes.com/svc/mostpopular/v2/viewed/1.json?api-key=${apiKey}`;
+        // Daftar kategori khusus yang memiliki logika berbeda
+        const specialCategories = ["programming", "indonesia", "mostPopular"];
+
+        if (specialCategories.includes(category)) {
+          // Logika untuk kategori khusus (tetap sama seperti sebelumnya)
+          if (category === "programming") {
+            url = searchTerm
+              ? `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${encodeURIComponent(
+                  searchTerm
+                )}&api-key=${apiKey}`
+              : `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=programming&api-key=${apiKey}`;
+          } else if (category === "indonesia") {
+            url = searchTerm
+              ? `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${encodeURIComponent(
+                  searchTerm
+                )}&api-key=${apiKey}`
+              : `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=Indonesia&api-key=${apiKey}`;
+          } else if (category === "mostPopular") {
+            url = `https://api.nytimes.com/svc/mostpopular/v2/viewed/1.json?api-key=${apiKey}`;
+          }
+        } else {
+          // Untuk kategori lain atau pencarian bebas
+          url = searchTerm
+            ? `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${encodeURIComponent(
+                searchTerm
+              )}&api-key=${apiKey}`
+            : `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${encodeURIComponent(
+                category
+              )}&api-key=${apiKey}`;
         }
 
         const response = await axios.get(url);
 
-        // Check the response structure based on the category
-        if (category === "programming" || category === "indonesia") {
+        if (
+          category === "programming" ||
+          category === "indonesia" ||
+          !specialCategories.includes(category)
+        ) {
           if (
             response.data &&
             response.data.response &&
@@ -57,28 +84,14 @@ const Articles = ({ category, searchTerm }) => {
         }
         console.error("Error fetching data:", err);
       } finally {
-        setLoading(false); // Set loading to false after fetching data
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, [category]);
+  }, [category, searchTerm]);
 
-  const filteredData = searchTerm
-    ? data.filter((article) => {
-        const headline =
-          category === "programming" || category === "indonesia"
-            ? article.headline
-            : article;
-        return (
-          headline &&
-          headline.main &&
-          headline.main.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      })
-    : data;
-
-  // Show loading skeleton while data is being fetched
+  // Render loading skeleton
   if (loading) {
     return (
       <Row gutter={[16, 16]}>
@@ -93,7 +106,7 @@ const Articles = ({ category, searchTerm }) => {
     );
   }
 
-  // Show error message if there was an error fetching data
+  // Render error message
   if (error) {
     return (
       <Alert
@@ -113,14 +126,26 @@ const Articles = ({ category, searchTerm }) => {
           ? "Programming Articles"
           : category === "indonesia"
           ? "Indonesian Articles"
-          : "Most Popular Articles"}
+          : category === "mostPopular"
+          ? "Most Popular Articles"
+          : `${category.charAt(0).toUpperCase() + category.slice(1)} Articles`}
       </Title>
       <Row gutter={[16, 16]}>
-        {filteredData.map((article, index) => {
+        {data.map((article, index) => {
           const headline =
-            category === "programming" || category === "indonesia"
+            ["programming", "indonesia"].includes(category) ||
+            !["mostPopular"].includes(category)
               ? article.headline
               : article;
+
+          const isSaved = savedArticles.some(
+            (saved) =>
+              saved.title ===
+              (category === "mostPopular"
+                ? article.title
+                : headline?.main || headline?.title)
+          );
+
           return (
             <Col xs={24} sm={12} md={8} lg={6} key={index}>
               <Card
@@ -206,20 +231,34 @@ const Articles = ({ category, searchTerm }) => {
                   Read More
                 </Link>
                 <Button
-                  type="primary"
+                  type={isSaved ? "dashed" : "primary"}
                   onClick={() =>
-                    dispatch(
-                      saveArticle({
-                        source: article.source || "Unknown",
-                        title: headline?.main || "No Title Available",
-                        description:
-                          article.abstract || "No description available.",
-                      })
-                    )
+                    isSaved
+                      ? dispatch(
+                          unsaveArticle(
+                            category === "mostPopular"
+                              ? article.title
+                              : headline?.main || headline?.title
+                          )
+                        )
+                      : dispatch(
+                          saveArticle({
+                            source:
+                              article.source || article.section || "Unknown",
+                            title:
+                              category === "mostPopular"
+                                ? article.title
+                                : headline?.main || "No Title Available",
+                            description:
+                              article.abstract ||
+                              article.abstract ||
+                              "No description available.",
+                          })
+                        )
                   }
                   style={{ marginTop: "10px" }}
                 >
-                  Save
+                  {isSaved ? "Unsave" : "Save"}
                 </Button>
                 <Paragraph
                   style={{ marginTop: "10px", fontSize: "12px", color: "#888" }}

@@ -1,31 +1,23 @@
-import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Articles from "./pages/Article";
 import Save from "./components/Save";
+import SearchResults from "./components/SearchResult";
 
 const App = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-
   return (
     <Router>
-      <Navbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      <Navbar />
 
       <Routes>
         <Route
           path="/programming"
-          element={<Articles category="programming" searchTerm={searchTerm} />}
+          element={<Articles category="programming" />}
         />
-        <Route
-          path="/indonesia"
-          element={<Articles category="indonesia" searchTerm={searchTerm} />}
-        />
+        <Route path="/indonesia" element={<Articles category="indonesia" />} />
         <Route path="/save" exact element={<Save />} />
-        <Route
-          path="/"
-          exact
-          element={<Articles category="mostPopular" searchTerm={searchTerm} />}
-        />
+        <Route path="/" exact element={<Articles category="mostPopular" />} />
+        <Route path="/search" element={<SearchResults />} />
       </Routes>
     </Router>
   );

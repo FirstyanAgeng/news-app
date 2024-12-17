@@ -4,3 +4,9 @@ export const saveArticle = (article) => {
     payload: article,
   };
 };
+export const unsaveArticle = (title) => {
+  return {
+    type: "UNSAVE_ARTICLE",
+    payload: title,
+  };
+};

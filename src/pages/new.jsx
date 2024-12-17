@@ -33,6 +33,9 @@ const Navbar = () => {
       <Menu.Item key="indonesia">
         <Link to="/indonesia">Indonesia</Link>
       </Menu.Item>
+      <Menu.Item key="mostPopular">
+        <Link to="/mostPopular">Most Popular</Link>
+      </Menu.Item>
       <Menu.Item key="save">
         <Link to="/save">Saved</Link>
       </Menu.Item>
